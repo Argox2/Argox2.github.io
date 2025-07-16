@@ -1,13 +1,15 @@
-name: Publish Hugo site to GitHub Pages
+# Build & publish Hugo site to GitHub Pages
+name: Deploy Hugo site to Pages
 
 on:
   push:
-    branches: [main]
+    branches: [main]        # solo cuando hagas push a main
+  workflow_dispatch:        # permite lanzarlo manualmente
 
 permissions:
-  contents: read        # para checkout
-  pages: write          # para publicar
-  id-token: write       # para firmar la publicación
+  contents: read            # checkout
+  pages: write              # publicar
+  id-token: write           # firmar el deploy
 
 concurrency:
   group: "pages"
@@ -17,22 +19,29 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
-          submodules: true
+          submodules: true     # para que PaperMod llegue al runner
           fetch-depth: 0
 
-      - uses: peaceiris/actions-hugo@v3
+      - name: Configure Pages
+        uses: actions/configure-pages@v5   # habilita Pages y define rutas
+
+      - name: Setup Hugo
+        uses: peaceiris/actions-hugo@v3
         with:
           hugo-version: '0.148.1'
           extended: true
 
-      - run: hugo --minify
+      - name: Build site
+        run: hugo --minify
 
-      # Sube la carpeta pública como artefacto
-      - uses: actions/upload-pages-artifact@v2
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          path: ./public
+          path: ./public          # carpeta que genera Hugo
+          retention-days: 7       # opcional
 
   deploy:
     needs: build
@@ -41,5 +50,6 @@ jobs:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
-      - id: deploy
-        uses: actions/deploy-pages@v2
+      - name: Deploy to GitHub Pages
+        id: deploy
+        uses: actions/deploy-pages@v4
