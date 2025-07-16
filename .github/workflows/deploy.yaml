@@ -1,26 +1,32 @@
-name: Deploy Hugo site to Pages
+name: Deploy Hugo site to GitHub Pages
+
 on:
   push:
     branches: [main]
-  workflow_dispatch:
+
 permissions:
   contents: write
-  pages: write
+
 jobs:
-  build:
+  build-deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repo
+        uses: actions/checkout@v4
         with:
-          submodules: recursive
-      - uses: actions/setup-go@v5
+          submodules: true  # Para themes como PaperMod
+          fetch-depth: 0
+
+      - name: Setup Hugo
+        uses: peaceiris/actions-hugo@v3
         with:
-          go-version: '>=1.21'
-      - name: Install Hugo
-        run: sudo apt-get install -y hugo
-      - name: Build
+          hugo-version: '0.148.1'
+          extended: true
+
+      - name: Build Hugo site
         run: hugo --minify
-      - name: Deploy
+
+      - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
